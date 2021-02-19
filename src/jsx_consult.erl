@@ -32,9 +32,21 @@
     return_maps = false
 }).
 
--type config() :: proplists:proplist().
+-type config() :: list().
 -export_type([config/0]).
 
+-ifndef(maps_support).
+-type json_value() :: list(json_value())
+    | list({binary() | atom(), json_value()})
+    | true
+    | false
+    | null
+    | integer()
+    | float()
+    | binary().
+-endif.
+
+-ifdef(maps_support).
 -type json_value() :: list(json_value())
     | map()
     | true
@@ -43,9 +55,15 @@
     | integer()
     | float()
     | binary().
--export_type([json_value/0]).
+-endif.
 
+
+-ifdef(maps_always).
 opts(Opts) -> [return_maps, multi_term] ++ Opts.
+-endif.
+-ifndef(maps_always).
+opts(Opts) -> [multi_term] ++ Opts.
+-endif.
 
 -spec consult(File::file:name_all(), Config::config()) -> [json_value()].
 
@@ -62,8 +80,8 @@ consult(File, Config) when is_list(Config) ->
     end.
 
 
--type state() :: {[], config(), {list(), #config{}}}.
--spec init(Config::config()) -> state().
+-type state() :: {[], proplists:proplist(), {list(), #config{}}}.
+-spec init(Config::proplists:proplist()) -> state().
 
 init(Config) -> {[], Config, jsx_to_term:start_term(Config)}.
 
